@@ -1,0 +1,1 @@
+{"version":3,"sources":["index.css"],"names":[],"mappings":"AAAA,cAAc,CAEd,oBAAoB,CAEpB,mBAAmB","file":"main.500e6c9b.chunk.css","sourcesContent":["@tailwind base;\n\n@tailwind components;\n\n@tailwind utilities; "]}
