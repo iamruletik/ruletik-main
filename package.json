@@ -9,7 +9,8 @@
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-scripts": "3.4.0",
-    "tailwindcss": "^1.2.0"
+    "tailwindcss": "^1.2.0",
+    "three": "^0.114.0"
   },
   "scripts": {
     "start": "react-scripts start",
