@@ -10,3 +10,20 @@
   margin: 0;
   overflow: hidden;
 }
+
+
+
+.temp-email {
+
+	z-index:100;
+	position: absolute;
+	background-color: none;
+	color: white;
+	font-family: Helvetica, Arial;
+	font-weight: 700;
+	line-height: 1.5;
+	top: 30px;
+	left: 30px;
+	max-width: 315px;
+	font-size: 15px;
+}
