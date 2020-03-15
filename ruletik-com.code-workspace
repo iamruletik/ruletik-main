@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.colorTheme": "One Dark Pro",
+		"oneDarkPro.editorTheme": "ayu"
+	}
+}
