@@ -2,116 +2,184 @@ import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-//import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { GodRaysEffect, EffectComposer, EffectPass, RenderPass, SMAAEffect } from 'postprocessing';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 class App extends Component {
 	componentDidMount() {
+
+	let scene,
+		renderer,
+		camera,
+		model,                              // Our character
+		neck,                               // Reference to the neck bone in the skeleton
+		waist,                               // Reference to the waist bone in the skeleton
+		possibleAnims,                      // Animations found in our file
+		mixer,                              // THREE.js animations mixer
+		idle,                               // Idle, the default state our character returns to
+		clock = new THREE.Clock(),          // Used for anims, which run to a clock instead of frame rate 
+		currentlyAnimating = false,         // Used to check whether characters neck is being used in another anim
+		raycaster = new THREE.Raycaster(),  // Used to detect the click on our character
+		backgroundColor = 0xF1F1F1,
+		loaderAnim = document.getElementById('js-loader');
+
 		
-		// === THREE.JS CODE START ===
+
+		let stacy_txt = new THREE.TextureLoader().load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1376484/stacy.jpg');
+
+		stacy_txt.flipY = false; // we flip the texture so that its the right way up
+
+		const stacy_mtl = new THREE.MeshPhongMaterial({
+			map: stacy_txt,
+			color: 0xffffff,
+			skinning: true
+		});
 		
-		var mixer;
+		
 		var gltfLoader = new GLTFLoader();
-		var scene = new THREE.Scene();
-		scene.background = new THREE.Color( 0x080808 );
+		scene = new THREE.Scene();
+		scene.background = new THREE.Color(backgroundColor);
+		//scene.fog = new THREE.Fog(backgroundColor, 30, 100);
 
-		var camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 5000 );
-		camera.position.set( 0, 25, 350 );
-		//camera.lookAt( scene.position );
+		camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1000 );
+		camera.position.z = 30
+		camera.position.x = 0;
+		camera.position.y = -3;
 
 
 
-		var renderer = new THREE.WebGLRenderer();
+		renderer = new THREE.WebGLRenderer({ antialias: true });
 		renderer.setPixelRatio( window.devicePixelRatio );
 		renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.shadowMap.enabled = true;
 		this.mount.appendChild( renderer.domElement );
 
-		//var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-		//hemiLight.position.set( 0, 20, 0 );
-		//scene.add( hemiLight );
-
-		var dirLight = new THREE.DirectionalLight( 0x208FFD, 5);
-		dirLight.position.set( 0, 0, -1 );
-		scene.add( dirLight );
-
-
-
-		//CREATE CIRCLE
-		let circleGeo = new THREE.CircleGeometry(150,50);
-    	let circleMat = new THREE.MeshBasicMaterial({color: 0x208FFD});
-    	let circle = new THREE.Mesh(circleGeo, circleMat);
-    	circle.position.set(0, 50 ,-500);
-    	circle.scale.setX(1);
-    	scene.add(circle);
-
-
-
-    	//POST-PROCESSING EFFECTS
-	    let areaImage = new Image();
-	        areaImage.src = SMAAEffect.areaImageDataURL;
-	    let searchImage = new Image();
-	        searchImage.src = SMAAEffect.searchImageDataURL;
-	    let smaaEffect = new SMAAEffect(searchImage,areaImage,1);
-	  
-
-    	let godraysEffect = new GodRaysEffect(camera, circle, {
-      		resolutionScale: 1,
-      		density: 0.5,
-      		decay: 0.96,
-      		weight: 0.5,
-      		samples: 84
-    	});
-
-
-    	let renderPass = new RenderPass(scene, camera);
-    	let effectPass = new EffectPass(camera,smaaEffect,godraysEffect);
-    	effectPass.renderToScreen = true;
 		
 
-    	let composer = new EffectComposer(renderer);
-    	composer.addPass(renderPass);
-    	composer.addPass(effectPass);
+		let hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.61);
+		hemiLight.position.set(0, 50, 0);
+		scene.add(hemiLight);
 
+
+		let d = 8.25;
+		let dirLight = new THREE.DirectionalLight(0xffffff, 0.54);
+		dirLight.position.set(-8, 12, 8);
+		dirLight.castShadow = true;
+		dirLight.shadow.mapSize = new THREE.Vector2(1024, 1024);
+		dirLight.shadow.camera.near = 0.1;
+		dirLight.shadow.camera.far = 1500;
+		dirLight.shadow.camera.left = d * -1;
+		dirLight.shadow.camera.right = d;
+		dirLight.shadow.camera.top = d;
+		dirLight.shadow.camera.bottom = d * -1;
+		// Add directional Light to scene
+		scene.add(dirLight);
+
+
+		// Floor
+		let floorGeometry = new THREE.PlaneGeometry(5000, 5000, 1, 1);
+		let floorMaterial = new THREE.MeshPhongMaterial({
+			color: 0xEEEEEE,
+			shininess: 0,
+		});
+
+		let floor = new THREE.Mesh(floorGeometry, floorMaterial);
+		floor.rotation.x = -0.5 * Math.PI; // This is 90 degrees by the way
+		floor.receiveShadow = true;
+		floor.position.y = -11;
+		scene.add(floor);
 
 
 		//LOAD 3D MODEL
-		gltfLoader.load( './isometric-ruletik-test.glb', gltf => {
-			
-			var ruletikLogo = gltf.scene.children[0];
-			ruletikLogo.scale.set(130,130,130);
-			scene.add(gltf.scene);
+		const MODEL_PATH = 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/1376484/stacy_lightweight.glb';
+		gltfLoader.load(MODEL_PATH, gltf => {
 
-			mixer = new THREE.AnimationMixer( gltf.scene );
-			mixer.clipAction( gltf.animations[ 0 ] ).play();
+			model = gltf.scene;
+			let fileAnimations = gltf.animations;
+			let clips = fileAnimations.filter(val => val.name !== 'idle');
+			
+			model.traverse(o => {
+				if (o.isMesh) {
+					o.castShadow = true;
+					o.receiveShadow = true;
+					o.material = stacy_mtl; 
+				}
+				// Reference the neck and waist bones
+				if (o.isBone && o.name === 'mixamorigNeck') {
+					neck = o;
+				}
+				if (o.isBone && o.name === 'mixamorigSpine') {
+					waist = o;
+				}
+			});
+
+			model.scale.set(7, 7, 7);
+			model.position.y = -11;
+
+			mixer = new THREE.AnimationMixer(model);
+			let idleAnim = THREE.AnimationClip.findByName(fileAnimations, 'idle');
+			idleAnim.tracks.splice(3, 3);
+			idleAnim.tracks.splice(9, 3);
+			idle = mixer.clipAction(idleAnim);
+			idle.play();
+
+
+			scene.add(model);
 
 		} );
 
 
 
-
-		//const controls = new OrbitControls( camera, renderer.domElement );
-
-		const clock = new THREE.Clock();
-
 		function animate() {
 
-
-
-			requestAnimationFrame( animate );
-
 			var delta = clock.getDelta();
+			if (mixer) mixer.update(delta);
 
-			if ( mixer ) mixer.update( delta );
+			if (resizeRendererToDisplaySize(renderer)) {
+				const canvas = renderer.domElement;
+				camera.aspect = canvas.clientWidth / canvas.clientHeight;
+				camera.updateProjectionMatrix();
+				console.log('good');
+			}
 
 			renderer.render(scene,camera);
-			composer.render(0.1);
-
+			requestAnimationFrame(animate);
 		}
-
 		animate();
 
-		// === THREE.JS EXAMPLE CODE END ===
+		function resizeRendererToDisplaySize(renderer) {
+			const canvas = renderer.domElement;
+			let width = window.innerWidth;
+			let height = window.innerHeight;
+			let canvasPixelWidth = canvas.width / window.devicePixelRatio;
+			let canvasPixelHeight = canvas.height / window.devicePixelRatio;
+
+			const needResize =
+				canvasPixelWidth !== width || canvasPixelHeight !== height;
+			if (needResize) {
+				renderer.setSize(width, height, false);
+			}
+
+			console.log(needResize);
+			return needResize;
+		}
+
+		document.addEventListener('mousemove', function (e) {
+			var mousecoords = getMousePos(e);
+			if (neck && waist) {
+				moveJoint(mousecoords, neck, 50);
+				moveJoint(mousecoords, waist, 30);
+			}
+		});
+
+		function getMousePos(e) {
+			return { x: e.clientX, y: e.clientY };
+		}
+
+		function moveJoint(mouse, joint, degreeLimit) {
+			let degrees = getMouseDegrees(mouse.x, mouse.y, degreeLimit);
+			joint.rotation.y = THREE.Math.degToRad(degrees.x);
+			joint.rotation.x = THREE.Math.degToRad(degrees.y);
+		}
 
 	}
 
@@ -120,8 +188,56 @@ class App extends Component {
 			<div ref={ref => (this.mount = ref)} />
 		)
 	}
+	
 }
 
 export default App
 
 ReactDOM.render(<App />, document.getElementById('root'))
+
+
+
+
+function getMouseDegrees(x, y, degreeLimit) {
+	let dx = 0,
+		dy = 0,
+		xdiff,
+		xPercentage,
+		ydiff,
+		yPercentage;
+
+	let w = { x: window.innerWidth, y: window.innerHeight };
+
+	// Left (Rotates neck left between 0 and -degreeLimit)
+
+	// 1. If cursor is in the left half of screen
+	if (x <= w.x / 2) {
+		// 2. Get the difference between middle of screen and cursor position
+		xdiff = w.x / 2 - x;
+		// 3. Find the percentage of that difference (percentage toward edge of screen)
+		xPercentage = (xdiff / (w.x / 2)) * 100;
+		// 4. Convert that to a percentage of the maximum rotation we allow for the neck
+		dx = ((degreeLimit * xPercentage) / 100) * -1;
+	}
+	// Right (Rotates neck right between 0 and degreeLimit)
+	if (x >= w.x / 2) {
+		xdiff = x - w.x / 2;
+		xPercentage = (xdiff / (w.x / 2)) * 100;
+		dx = (degreeLimit * xPercentage) / 100;
+	}
+	// Up (Rotates neck up between 0 and -degreeLimit)
+	if (y <= w.y / 2) {
+		ydiff = w.y / 2 - y;
+		yPercentage = (ydiff / (w.y / 2)) * 100;
+		// Note that I cut degreeLimit in half when she looks up
+		dy = (((degreeLimit * 0.5) * yPercentage) / 100) * -1;
+	}
+
+	// Down (Rotates neck down between 0 and degreeLimit)
+	if (y >= w.y / 2) {
+		ydiff = y - w.y / 2;
+		yPercentage = (ydiff / (w.y / 2)) * 100;
+		dy = (degreeLimit * yPercentage) / 100;
+	}
+	return { x: dx, y: dy };
+}
