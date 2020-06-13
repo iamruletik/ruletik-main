@@ -15,7 +15,7 @@ class App extends Component {
 		waist,                               // Reference to the waist bone in the skeleton
 		possibleAnims,                      // Animations found in our file
 		mixer,                              // THREE.js animations mixer
-		idle,                               // Idle, the default state our character returns to
+		walking,                               // Idle, the default state our character returns to
 		clock = new THREE.Clock(),          // Used for anims, which run to a clock instead of frame rate 
 		currentlyAnimating = false,         // Used to check whether characters neck is being used in another anim
 		raycaster = new THREE.Raycaster(),  // Used to detect the click on our character
@@ -88,17 +88,24 @@ class App extends Component {
 		//LOAD 3D MODEL
 		const MODEL_PATH = './RuletikLegoRig.glb';
 		gltfLoader.load(MODEL_PATH, gltf => {
-			console.log(gltfLoader.log);
+			
 			model = gltf.scene;
 			let fileAnimations = gltf.animations;
 			
 			model.traverse(o => {
+				if (o.isBone) {
+					console.log(o.name);
+				}
+
+
 				if (o.isMesh) {
 					o.castShadow = true;
 					o.receiveShadow = true;
 					o.material = ruletikMaterial; 
 				}
 				//Reference the neck and waist bones
+
+				
 				if (o.isBone && o.name === 'Head Bone') {
 					neck = o;
 				}
@@ -113,10 +120,10 @@ class App extends Component {
 
 			mixer = new THREE.AnimationMixer(model);
 			let walkingAnim = THREE.AnimationClip.findByName(fileAnimations, 'Walking');
-			walkingAnim.tracks.splice(3, 3);
-			walkingAnim.tracks.splice(9, 3);
-			idle = mixer.clipAction(walkingAnim);
-			idle.play();
+			//walkingAnim.tracks.splice(0, 3);  
+			//walkingAnim.tracks.splice(10, 3); 
+			walking = mixer.clipAction(walkingAnim);
+			walking.play();
 
 
 			scene.add(model);
@@ -127,6 +134,14 @@ class App extends Component {
 
 		function animate() {
 
+
+			setTimeout(function () {
+
+				
+
+			
+
+
 			var delta = clock.getDelta();
 			if (mixer) mixer.update(delta);
 
@@ -134,11 +149,14 @@ class App extends Component {
 				const canvas = renderer.domElement;
 				camera.aspect = canvas.clientWidth / canvas.clientHeight;
 				camera.updateProjectionMatrix();
-				console.log('good');
+				
 			}
 
 			renderer.render(scene,camera);
 			requestAnimationFrame(animate);
+
+
+			}, 500 / 8); //Custom Framerate
 		}
 		animate();
 
@@ -155,7 +173,7 @@ class App extends Component {
 				renderer.setSize(width, height, false);
 			}
 
-			console.log(needResize);
+			
 			return needResize;
 		}
 
