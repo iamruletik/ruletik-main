@@ -24,13 +24,9 @@ class App extends Component {
 
 		
 
-		let stacy_txt = new THREE.TextureLoader().load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1376484/stacy.jpg');
-
-		stacy_txt.flipY = false; // we flip the texture so that its the right way up
-
-		const stacy_mtl = new THREE.MeshPhongMaterial({
-			map: stacy_txt,
-			color: 0xffffff,
+		
+		const ruletikMaterial = new THREE.MeshPhongMaterial({
+			color: 0xFD7E14,
 			skinning: true
 		});
 		
@@ -41,9 +37,9 @@ class App extends Component {
 		//scene.fog = new THREE.Fog(backgroundColor, 30, 100);
 
 		camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1000 );
-		camera.position.z = 30
-		camera.position.x = 0;
-		camera.position.y = -3;
+		camera.position.z = 100;
+		camera.position.x = 40;
+		camera.position.y = 20;
 
 
 
@@ -78,48 +74,48 @@ class App extends Component {
 		// Floor
 		let floorGeometry = new THREE.PlaneGeometry(5000, 5000, 1, 1);
 		let floorMaterial = new THREE.MeshPhongMaterial({
-			color: 0xEEEEEE,
+			color: 0xDDDDDD,
 			shininess: 0,
 		});
 
 		let floor = new THREE.Mesh(floorGeometry, floorMaterial);
 		floor.rotation.x = -0.5 * Math.PI; // This is 90 degrees by the way
 		floor.receiveShadow = true;
-		floor.position.y = -11;
+		floor.position.y = -1;
 		scene.add(floor);
 
 
 		//LOAD 3D MODEL
-		const MODEL_PATH = 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/1376484/stacy_lightweight.glb';
+		const MODEL_PATH = './RuletikLegoRig.glb';
 		gltfLoader.load(MODEL_PATH, gltf => {
-
+			console.log(gltfLoader.log);
 			model = gltf.scene;
 			let fileAnimations = gltf.animations;
-			let clips = fileAnimations.filter(val => val.name !== 'idle');
 			
 			model.traverse(o => {
 				if (o.isMesh) {
 					o.castShadow = true;
 					o.receiveShadow = true;
-					o.material = stacy_mtl; 
+					o.material = ruletikMaterial; 
 				}
-				// Reference the neck and waist bones
-				if (o.isBone && o.name === 'mixamorigNeck') {
+				//Reference the neck and waist bones
+				if (o.isBone && o.name === 'Head Bone') {
 					neck = o;
 				}
-				if (o.isBone && o.name === 'mixamorigSpine') {
+				if (o.isBone && o.name === 'Spine Bone') {
 					waist = o;
 				}
 			});
 
-			model.scale.set(7, 7, 7);
-			model.position.y = -11;
+			model.scale.set(1, 1, 1);
+			model.position.y = 0;
+			model.rotation.y = 0.15 * Math.PI;
 
 			mixer = new THREE.AnimationMixer(model);
-			let idleAnim = THREE.AnimationClip.findByName(fileAnimations, 'idle');
-			idleAnim.tracks.splice(3, 3);
-			idleAnim.tracks.splice(9, 3);
-			idle = mixer.clipAction(idleAnim);
+			let walkingAnim = THREE.AnimationClip.findByName(fileAnimations, 'Walking');
+			walkingAnim.tracks.splice(3, 3);
+			walkingAnim.tracks.splice(9, 3);
+			idle = mixer.clipAction(walkingAnim);
 			idle.play();
 
 
