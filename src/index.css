@@ -10,3 +10,11 @@
   margin: 0;
   overflow: hidden;
 }
+
+#canvas {
+  z-index: -1;
+}
+
+#root {
+  z-index: 999;
+}
