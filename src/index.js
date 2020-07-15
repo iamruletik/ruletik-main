@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import './index.css'
+import './index.sass'
 import Canvas from './components/Canvas'
 import Main from './components/Main'
 

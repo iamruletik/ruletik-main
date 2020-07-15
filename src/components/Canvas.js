@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+//import Stats from 'three/examples/jsm/libs/stats.module.js';
 //import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 
 class Canvas extends Component {
@@ -15,10 +15,11 @@ class Canvas extends Component {
             walking,                            // Idle, the default state our character returns to
             clock = new THREE.Clock(),          // Used for anims, which run to a clock instead of frame rate 
             white = 0xFFFFFF,
+            //black = 0x000000,
             ortoCameraFrustum = 128,             // Blurs dirLight Shadows
-            backgroundColor = white,
-            width = window.innerWidth,
-            height = window.innerHeight;
+            backgroundColor = white;
+            //width = window.innerWidth,
+            //height = window.innerHeight;
 
 
         const ruletikMaterial = new THREE.MeshPhongMaterial({
@@ -47,7 +48,7 @@ class Canvas extends Component {
 
 
         //----------------------------------------    Lightning Setup  ---------------------------------//
-        var globalLight = new THREE.AmbientLight(0xC3A270);  //Global Light without direction
+        var globalLight = new THREE.AmbientLight(0xCECECE);  //Global Light without direction
         scene.add(globalLight);
 
 
@@ -65,9 +66,9 @@ class Canvas extends Component {
 
         // Add directional Light to scene
         scene.add(dirLightTop, dirLightBottom);
-        scene.add(new THREE.CameraHelper(dirLightTop.shadow.camera));
+        //scene.add(new THREE.CameraHelper(dirLightTop.shadow.camera));
         //scene.add(new THREE.CameraHelper(camera));
-        scene.add(new THREE.DirectionalLightHelper(dirLightTop));
+        //scene.add(new THREE.DirectionalLightHelper(dirLightTop));
 
 
 
@@ -116,13 +117,13 @@ class Canvas extends Component {
 
 
         //----------------------------------------    SSAO  ---------------------------------//
-        var container, stats;
+       // var container, stats;
 
-        container = document.createElement('div');
-        document.body.appendChild(container);
+       // container = document.createElement('div');
+        //document.body.appendChild(container);
 
 
-        stats = new Stats();
+       // stats = new Stats();
         //container.appendChild(stats.dom); // FPS stats container
 
         //----------------------------------------    windowResize   ---------------------------------//
@@ -140,9 +141,9 @@ class Canvas extends Component {
             var delta = clock.getDelta();
             if (mixer) mixer.update(delta);
 
-            stats.begin();
+            
             renderer.render(scene, camera);
-            stats.end();
+            
         }
 
 
